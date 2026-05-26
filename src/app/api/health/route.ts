@@ -13,9 +13,14 @@ export async function GET() {
       '/api/earthquakes',
       '/api/news',
       '/api/gdelt',
+      '/api/gdelt-native',
       '/api/markets',
       '/api/frontlines',
       '/api/region-dossier',
+      '/api/acled',
+      '/api/ais',
+      '/api/weather-forecast',
+      '/api/cve',
     ],
   });
 }

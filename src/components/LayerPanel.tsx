@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plane, Satellite, Activity, Globe, Radio, Eye,
   Shield, Sun, AlertTriangle, Camera, Flame, Target,
-  CloudLightning, Radiation, Tv, Anchor, Ship,
+  CloudLightning, Radiation, Tv, Anchor, Ship, Cloud,
   ChevronDown, ChevronUp, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 

@@ -107,7 +107,7 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
       createDot(map, 'dot-cctv', '#39FF14', 10);
 
       // Sources
-      const sources = ['flights','military','jets','private-fl','satellites','earthquakes','gdelt','gps-jamming','day-night','cctv','fires','weather','infrastructure','maritime','maritime-choke','maritime-ships','live-news','conflict-zones', 'war-alerts-targets', 'war-alerts-lines', 'balloons', 'radiation'];
+      const sources = ['flights','military','jets','private-fl','satellites','earthquakes','gdelt','gdelt-native','acled','ais','weather-forecast','gps-jamming','day-night','cctv','fires','weather','infrastructure','maritime','maritime-choke','maritime-ships','live-news','conflict-zones', 'war-alerts-targets', 'war-alerts-lines', 'balloons', 'radiation'];
       sources.forEach(s => map.addSource(s, { type: 'geojson', data: EMPTY_FC }));
 
       // ── CONFLICT ZONES — small warning markers (not polygons) ──
@@ -219,6 +219,40 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
       // GDELT
       map.addLayer({ id: 'gdelt-dots', type: 'circle', source: 'gdelt', paint: {
         'circle-radius': 4, 'circle-color': '#FF3D3D', 'circle-opacity': 0.5, 'circle-stroke-width': 1, 'circle-stroke-color': '#FF3D3D', 'circle-stroke-opacity': 0.3,
+      }});
+
+      // GDELT Native
+      map.addLayer({ id: 'gdelt-native-dots', type: 'circle', source: 'gdelt-native', paint: {
+        'circle-radius': ['interpolate',['linear'],['zoom'], 1,3, 5,5, 10,8],
+        'circle-color': '#FF8F00', 'circle-opacity': 0.6,
+        'circle-stroke-width': 1, 'circle-stroke-color': '#FF8F00', 'circle-stroke-opacity': 0.3,
+      }});
+
+      // ACLED Conflicts
+      map.addLayer({ id: 'acled-glow', type: 'circle', source: 'acled', paint: {
+        'circle-radius': ['interpolate',['linear'],['zoom'], 1,8, 5:14, 10,22],
+        'circle-color': '#FF5722', 'circle-opacity': 0.1, 'circle-blur': 1,
+      }});
+      map.addLayer({ id: 'acled-dots', type: 'circle', source: 'acled', paint: {
+        'circle-radius': ['interpolate',['linear'],['zoom'], 1,4, 5,6, 10,10],
+        'circle-color': '#FF5722', 'circle-opacity': 0.85,
+        'circle-stroke-width': 2, 'circle-stroke-color': '#FF5722', 'circle-stroke-opacity': 0.4,
+      }});
+
+      // AIS Vessels
+      createDot(map, 'dot-ais', '#00E5FF', 8);
+      map.addLayer({ id: 'ais-dots', type: 'circle', source: 'ais', paint: {
+        'circle-radius': ['interpolate',['linear'],['zoom'], 1,2, 5,4, 10,7],
+        'circle-color': '#00E5FF', 'circle-opacity': 0.8,
+        'circle-stroke-width': 1, 'circle-stroke-color': '#00E5FF', 'circle-stroke-opacity': 0.3,
+      }});
+
+      // Weather Forecast
+      map.addLayer({ id: 'wf-dots', type: 'circle', source: 'weather-forecast', paint: {
+        'circle-radius': ['interpolate',['linear'],['zoom'], 1,5, 5,8, 10,12],
+        'circle-color': ['interpolate',['linear'],['get','temp'], -20,'#448AFF', 0,'#00E5FF', 20,'#FFD700', 35,'#FF6B00', 45,'#FF1744'],
+        'circle-opacity': 0.7,
+        'circle-stroke-width': 1, 'circle-stroke-color': '#9C27B0', 'circle-stroke-opacity': 0.3,
       }});
 
       // GPS Jamming
@@ -523,8 +557,46 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
     });
 
 
+    // ── GDELT Native popup ──
+    map.on('click', 'gdelt-native-dots', e => {
+      if (!e.features?.length) return;
+      const p = e.features[0].properties as any;
+      const coords = (e.features[0].geometry as any).coordinates;
+      const tone = p.tone || 0;
+      const toneColor = tone < -30 ? '#FF1744' : tone < 0 ? '#FF9500' : tone > 30 ? '#00E676' : '#E8E6E0';
+      popup(coords, `<div style=\"${pStyle}border:1px solid rgba(255,143,0,0.3);\">\n        <div style=\"color:#FF8F00;font-size:12px;font-weight:700;margin-bottom:4px;\">📰 ${p.name || 'Global Event'}</div>\n        <div style=\"font-size:9px;color:#aaa;margin-bottom:6px;\">${p.event_type || 'News Event'}</div>\n        <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:9px;\">\n          <div><span style=\"color:#5C5A54;\">TONE</span><br/><span style=\"color:${toneColor};\">${tone > 0 ? '+' : ''}${tone.toFixed(1)}</span></div>\n          <div><span style=\"color:#5C5A54;\">COORDS</span><br/><span style=\"color:#E8E6E0;\">${coords[1].toFixed(3)}°, ${coords[0].toFixed(3)}°</span></div>\n        </div>\n        ${p.url ? `<a href=\"${p.url}\" target=\"_blank\" style=\"${linkStyle}color:#FF8F00;border:1px solid rgba(255,143,0,0.4);background:rgba(255,143,0,0.1);display:inline-block;margin-top:8px;\">SOURCE ARTICLE</a>` : ''}\n      </div>`);
+    });
+
+    // ── ACLED popup ──
+    map.on('click', 'acled-dots', e => {
+      if (!e.features?.length) return;
+      const p = e.features[0].properties as any;
+      const coords = (e.features[0].geometry as any).coordinates;
+      const fatColor = p.fatalities > 0 ? '#FF1744' : '#FF5722';
+      popup(coords, `<div style=\"${pStyle}border:1px solid ${fatColor}40;\">\n        <div style=\"color:#FF5722;font-size:12px;font-weight:700;margin-bottom:4px;\">⚔️ ${p.name || 'Conflict Event'}</div>\n        <div style=\"font-size:9px;color:#aaa;margin-bottom:6px;\">${p.sub_type || ''} — ${p.country || ''}</div>\n        <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:9px;\">\n          <div><span style=\"color:#5C5A54;\">ACTOR</span><br/><span style=\"color:#E8E6E0;\">${p.actor || '—'}</span></div>\n          <div><span style=\"color:#5C5A54;\">FATALITIES</span><br/><span style=\"color:${fatColor};\">${p.fatalities > 0 ? p.fatalities : 'None'}</span></div>\n          <div><span style=\"color:#5C5A54;\">DATE</span><br/><span style=\"color:#E8E6E0;\">${p.date || '—'}</span></div>\n          <div><span style=\"color:#5C5A54;\">COORDS</span><br/><span style=\"color:#E8E6E0;\">${coords[1].toFixed(3)}°, ${coords[0].toFixed(3)}°</span></div>\n        </div>\n        <a href=\"https://acleddata.com\" target=\"_blank\" style=\"${linkStyle}color:#FF5722;border:1px solid rgba(255,87,34,0.4);background:rgba(255,87,34,0.1);display:inline-block;margin-top:8px;\">ACLED DATA</a>\n      </div>`);
+    });
+
+    // ── AIS Vessels popup ──
+    map.on('click', 'ais-dots', e => {
+      if (!e.features?.length) return;
+      const p = e.features[0].properties as any;
+      const coords = (e.features[0].geometry as any).coordinates;
+      const typeColor = p.type === 'tanker' ? '#FF9500' : p.type === 'military' ? '#FF1744' : '#00E5FF';
+      popup(coords, `<div style=\"${pStyle}border:1px solid ${typeColor}40;\">\n        <div style=\"color:${typeColor};font-size:12px;font-weight:700;margin-bottom:4px;\">🚢 ${p.name || 'Unknown Vessel'}</div>\n        <div style=\"font-size:9px;color:#aaa;margin-bottom:6px;\">${(p.type || 'Unknown').toUpperCase()} — ${p.flag || ''}</div>\n        <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:9px;\">\n          <div><span style=\"color:#5C5A54;\">SPEED</span><br/><span style=\"color:#E8E6E0;\">${p.speed ? p.speed + ' kn' : '—'}</span></div>\n          <div><span style=\"color:#5C5A54;\">HEADING</span><br/><span style=\"color:#E8E6E0;\">${p.heading ? p.heading + '°' : '—'}</span></div>\n          <div><span style=\"color:#5C5A54;\">STATUS</span><br/><span style=\"color:#E8E6E0;\">${p.status || '—'}</span></div>\n          <div><span style=\"color:#5C5A54;\">COORDS</span><br/><span style=\"color:#E8E6E0;\">${coords[1].toFixed(3)}°, ${coords[0].toFixed(3)}°</span></div>\n        </div>\n        <a href=\"https://www.marinetraffic.com/en/ais/details/ships/mmsi:${encodeURIComponent(p.name || '')}\" target=\"_blank\" style=\"${linkStyle}color:#00E5FF;border:1px solid rgba(0,229,255,0.4);background:rgba(0,229,255,0.1);display:inline-block;margin-top:8px;\">MARINE TRAFFIC</a>\n      </div>`);
+    });
+
+    // ── Weather Forecast popup ──
+    map.on('click', 'wf-dots', e => {
+      if (!e.features?.length) return;
+      const p = e.features[0].properties as any;
+      const coords = (e.features[0].geometry as any).coordinates;
+      const temp = p.temp || 0;
+      const tempColor = temp < 0 ? '#448AFF' : temp < 15 ? '#00E5FF' : temp < 28 ? '#FFD700' : temp < 38 ? '#FF6B00' : '#FF1744';
+      popup(coords, `<div style=\"${pStyle}border:1px solid ${tempColor}40;\">\n        <div style=\"color:#9C27B0;font-size:12px;font-weight:700;margin-bottom:4px;\">🌤️ ${p.name || 'Weather Station'}</div>\n        <div style=\"font-size:9px;color:#aaa;margin-bottom:6px;\">${p.weather_desc || ''}</div>\n        <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:9px;\">\n          <div><span style=\"color:#5C5A54;\">TEMP</span><br/><span style=\"color:${tempColor};font-weight:bold;\">${temp}°C</span></div>\n          <div><span style=\"color:#5C5A54;\">HUMIDITY</span><br/><span style=\"color:#E8E6E0;\">${p.humidity ? p.humidity + '%' : '—'}</span></div>\n          <div><span style=\"color:#5C5A54;\">WIND</span><br/><span style=\"color:#E8E6E0;\">${p.wind_speed ? p.wind_speed + ' km/h' : '—'}</span></div>\n          <div><span style=\"color:#5C5A54;\">COORDS</span><br/><span style=\"color:#E8E6E0;\">${coords[1].toFixed(3)}°, ${coords[0].toFixed(3)}°</span></div>\n        </div>\n        <a href=\"https://open-meteo.com/\" target=\"_blank\" style=\"${linkStyle}color:#9C27B0;border:1px solid rgba(156,39,176,0.4);background:rgba(156,39,176,0.1);display:inline-block;margin-top:8px;\">OPEN-METEO</a>\n      </div>`);
+    });
+
     // ── Generic hover for clickables ──
-    ['conflict-icons','cctv-dots','eq-circles','sat-dots','fires-heat','gdelt-dots','weather-dots','infra-dots','maritime-dots','choke-dots','news-dots','balloon-dots','rad-dots','ship-dots'].forEach(layer => {
+    ['conflict-icons','cctv-dots','eq-circles','sat-dots','fires-heat','gdelt-dots','gdelt-native-dots','acled-dots','ais-dots','wf-dots','weather-dots','infra-dots','maritime-dots','choke-dots','news-dots','balloon-dots','rad-dots','ship-dots'].forEach(layer => {
       map.on('mouseenter', layer, () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', layer, () => { map.getCanvas().style.cursor = ''; });
     });
@@ -759,6 +831,34 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
     setGeo('maritime-ships', activeLayers.maritime && data.maritime_ships ? data.maritime_ships.map((s: any) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [s.lng, s.lat] }, properties: { name: s.name, type: s.type, speed: s.speed, heading: s.heading, destination: s.destination, flag: s.flag } })) : []);
   }, [mapReady, data.maritime_ports, data.maritime_chokepoints, data.maritime_ships, activeLayers.maritime, setGeo]);
 
+  // GDELT Native
+  useEffect(() => {
+    if (!mapReady) return;
+    const events = (data.gdelt_native || []).slice(0, 300);
+    setGeo('gdelt-native', activeLayers.gdelt_native && events.length > 0 ? events.map((e: any) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [e.lng, e.lat] }, properties: { name: e.title || e.event_type || 'Event', url: e.url, tone: e.tone, event_type: e.event_type } })) : []);
+  }, [mapReady, data.gdelt_native, activeLayers.gdelt_native, setGeo]);
+
+  // ACLED
+  useEffect(() => {
+    if (!mapReady) return;
+    const events = (data.acled || []).slice(0, 300);
+    setGeo('acled', activeLayers.acled && events.length > 0 ? events.map((e: any) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [e.longitude, e.latitude] }, properties: { name: e.event_type, sub_type: e.sub_event_type, actor: e.actor1, country: e.country, fatalities: e.fatalities, date: e.event_date } })) : []);
+  }, [mapReady, data.acled, activeLayers.acled, setGeo]);
+
+  // AIS Vessels
+  useEffect(() => {
+    if (!mapReady) return;
+    const vessels = (data.ais || []).slice(0, 200);
+    setGeo('ais', activeLayers.ais && vessels.length > 0 ? vessels.map((v: any) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [v.lng, v.lat] }, properties: { name: v.name || v.mmsi, type: v.type, speed: v.speed, heading: v.heading, status: v.status, flag: v.flag } })) : []);
+  }, [mapReady, data.ais, activeLayers.ais, setGeo]);
+
+  // Weather Forecast
+  useEffect(() => {
+    if (!mapReady) return;
+    const points = Array.isArray(data.weather_forecast) ? data.weather_forecast.slice(0, 100) : (data.weather_forecast ? [data.weather_forecast] : []);
+    setGeo('weather-forecast', activeLayers.weather_forecast && points.length > 0 ? points.map((w: any) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [w.lng, w.lat] }, properties: { name: w.name || 'Weather', temp: w.temp, humidity: w.humidity, wind_speed: w.wind_speed, weather_desc: w.weather_desc } })) : []);
+  }, [mapReady, data.weather_forecast, activeLayers.weather_forecast, setGeo]);
+
   useEffect(() => {
     if (!mapReady) return;
     setGeo('balloons', activeLayers.balloons && data.balloons ? data.balloons.map((b: any) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [b.lng, b.lat] }, properties: { callsign: b.callsign, type: b.type, status: b.status, altitude: b.altitude, speed: b.speed, verticalRate: b.verticalRate, temperature: b.temperature, color: b.color } })) : []);
@@ -822,6 +922,12 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
     setVis(['ship-dots','ship-label'], activeLayers.maritime);
     setVis(['news-glow','news-dots','news-label'], activeLayers.live_news);
     setVis(['conflict-icons'], activeLayers.conflict_zones !== false);
+
+    // New layers visibility
+    setVis(['gdelt-native-dots'], activeLayers.gdelt_native);
+    setVis(['acled-glow','acled-dots'], activeLayers.acled);
+    setVis(['ais-dots'], activeLayers.ais);
+    setVis(['wf-dots'], activeLayers.weather_forecast);
 
     setVis(['balloon-dots','balloon-label'], activeLayers.balloons);
     setVis(['rad-glow','rad-dots','rad-label'], activeLayers.radiation);

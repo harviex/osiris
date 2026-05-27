@@ -230,7 +230,7 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
 
       // ACLED Conflicts
       map.addLayer({ id: 'acled-glow', type: 'circle', source: 'acled', paint: {
-        'circle-radius': ['interpolate',['linear'],['zoom'], 1,8, 5:14, 10,22],
+        'circle-radius': ['interpolate',['linear'],['zoom'], 1,8, 5,14, 10,22],
         'circle-color': '#FF5722', 'circle-opacity': 0.1, 'circle-blur': 1,
       }});
       map.addLayer({ id: 'acled-dots', type: 'circle', source: 'acled', paint: {

@@ -15,6 +15,7 @@ import KeyboardShortcuts from '@/components/KeyboardShortcuts';
 import GlobalStatusBar from '@/components/GlobalStatusBar';
 import LiveAlerts from '@/components/LiveAlerts';
 
+import CvePanel from '@/components/CvePanel';
 const OsirisMap = dynamic(() => import('@/components/OsirisMap'), { ssr: false });
 const LayerPanel = dynamic(() => import('@/components/LayerPanel'));
 const CameraViewer = dynamic(() => import('@/components/CameraViewer'));
@@ -88,6 +89,7 @@ export default function Dashboard() {
     jets: false,
     military: false,
     maritime: false,
+    ais: false,
     satellites: false,
     balloons: false,
     cctv: true,
@@ -95,13 +97,18 @@ export default function Dashboard() {
     earthquakes: true,
     fires: false,
     weather: false,
+    weather_forecast: false,
     radiation: false,
     infrastructure: false,
     global_incidents: true,
+    gdelt_native: false,
+    acled: false,
+    cve: false,
     war_alerts: false,
     gps_jamming: false,
     day_night: true,
   });
+  const [showCve, setShowCve] = useState(false);
   const [liveFeedUrl, setLiveFeedUrl] = useState<string | null>(null);
   const [liveFeedName, setLiveFeedName] = useState('');
   const [liveFeedEmbedAllowed, setLiveFeedEmbedAllowed] = useState(true);
@@ -320,6 +327,37 @@ export default function Dashboard() {
     if (activeLayers.global_incidents && !layerFetchedRef.current.has('gdelt')) {
       fetchEndpoint('/api/gdelt', d => ({ gdelt: d.events }));
       layerFetchedRef.current.add('gdelt');
+    }
+    // GDELT Native
+    if (activeLayers.gdelt_native && !layerFetchedRef.current.has('gdelt_native')) {
+      fetchEndpoint('/api/gdelt-native', d => ({ gdelt_native: d.events }));
+      layerFetchedRef.current.add('gdelt_native');
+    }
+    // ACLED
+    if (activeLayers.acled && !layerFetchedRef.current.has('acled')) {
+      fetchEndpoint('/api/acled', d => ({ acled: d.events }));
+      layerFetchedRef.current.add('acled');
+    }
+    // AIS
+    if (activeLayers.ais && !layerFetchedRef.current.has('ais')) {
+      fetchEndpoint('/api/ais', d => ({ ais: d.vessels }));
+      layerFetchedRef.current.add('ais');
+    }
+    // CVE
+    if (activeLayers.cve && !layerFetchedRef.current.has('cve')) {
+      fetchEndpoint('/api/cve', d => ({ cve: d.cves }));
+      layerFetchedRef.current.add('cve');
+      setShowCve(true);
+    }
+
+    // Auto-close panel when layer toggled off
+    if (!activeLayers.cve && showCve) {
+      setShowCve(false);
+    }
+    // Weather Forecast
+    if (activeLayers.weather_forecast && !layerFetchedRef.current.has('weather_forecast')) {
+      fetchEndpoint('/api/weather-forecast', d => ({ weather_forecast: d }));
+      layerFetchedRef.current.add('weather_forecast');
     }
 
   }, [activeLayers]);
@@ -822,6 +860,9 @@ export default function Dashboard() {
         onClose={() => setActiveCamera(null)}
         onLocate={(lat, lng) => setFlyToLocation({ lat, lng, ts: Date.now() })}
       />
+
+      {/* ── CVE Panel ── */}
+      <CvePanel data={data} isOpen={showCve} onClose={() => { setShowCve(false); setActiveLayers((prev: any) => ({ ...prev, cve: false })); }} />
 
       {/* ── OVERLAYS ── */}
       <div className="vignette absolute inset-0 pointer-events-none z-[2]" />

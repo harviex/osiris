@@ -28,15 +28,6 @@ const LAYER_GROUPS = [
     ],
   },
   {
-    label: 'MARITIME & SPACE',
-    icon: Ship,
-    color: '#00BCD4',
-    layers: [
-      { key: 'maritime', label: 'Maritime / Naval', icon: Ship, color: '#00BCD4', dataKey: 'maritime_ships' },
-      { key: 'satellites', label: 'Satellites', icon: Satellite, color: '#D4AF37', dataKey: 'satellites' },
-    ],
-  },
-  {
     label: 'SURVEILLANCE',
     icon: Camera,
     color: '#39FF14',
@@ -53,6 +44,7 @@ const LAYER_GROUPS = [
       { key: 'earthquakes', label: 'Earthquakes (24h)', icon: Activity, color: '#FF9500', dataKey: 'earthquakes' },
       { key: 'fires', label: 'Active Fires', icon: Flame, color: '#FF6B00', dataKey: 'fires' },
       { key: 'weather', label: 'Severe Weather', icon: CloudLightning, color: '#E040FB', dataKey: 'weather_events' },
+      { key: 'weather_forecast', label: 'Weather Forecast', icon: Cloud, color: '#9C27B0', dataKey: 'weather_forecast' },
     ],
   },
   {
@@ -62,7 +54,20 @@ const LAYER_GROUPS = [
     layers: [
       { key: 'infrastructure', label: 'Nuclear Facilities', icon: Radiation, color: '#76FF03', dataKey: 'infrastructure' },
       { key: 'global_incidents', label: 'Global Incidents', icon: AlertTriangle, color: '#FF3D3D', dataKey: 'gdelt' },
+      { key: 'gdelt_native', label: 'GDELT Native', icon: Globe, color: '#FF8F00', dataKey: 'gdelt_native' },
       { key: 'gps_jamming', label: 'GPS Jamming', icon: Radio, color: '#FF4444', dataKey: 'gps_jamming' },
+      { key: 'acled', label: 'ACLED Conflicts', icon: Target, color: '#FF5722', dataKey: 'acled' },
+      { key: 'cve', label: 'CVE Vulnerabilities', icon: Shield, color: '#E91E63', dataKey: 'cve' },
+    ],
+  },
+  {
+    label: 'MARITIME & SPACE',
+    icon: Ship,
+    color: '#00BCD4',
+    layers: [
+      { key: 'maritime', label: 'Maritime / Naval', icon: Ship, color: '#00BCD4', dataKey: 'maritime_ships' },
+      { key: 'ais', label: 'AIS Live Tracking', icon: Anchor, color: '#00E5FF', dataKey: 'ais' },
+      { key: 'satellites', label: 'Satellites', icon: Satellite, color: '#D4AF37', dataKey: 'satellites' },
     ],
   },
   {
